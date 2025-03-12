@@ -4,12 +4,13 @@ from distutils.util import strtobool
 import sys
 import os
 from typing import Dict
-import wandb
 import numpy as np
 from pathlib import Path
 import torch
 
 import os, sys
+
+np.int = np.int64
 
 sys.path.append(os.path.abspath(os.getcwd()))
 
@@ -129,7 +130,7 @@ def modify_args(
     import yaml
 
     with open(str(model_dir) + "/config.yaml") as f:
-        ydict = yaml.load(f)
+        ydict = yaml.load(f, Loader=yaml.Loader)
 
     print("_" * 50)
     for k, v in ydict.items():
@@ -155,10 +156,12 @@ def modify_args(
 
 
 def main(args):
-    # model_dir = 'trained_models/navigation/Navigation/rmappo/wandb/offline-run-20210720_220614-1eqhk4l1/files'
+    #model_dir = 'trained_models/navigation/Navigation/rmappo/wandb/offline-run-20210720_220614-1eqhk4l1/files'
+    #model_dir = 'onpolicy/results/GraphMPE/navigation_graph/rmappo/informarl/wandb/run-20250312_024502-j08n9m0q/files'
     parser = get_config()
     all_args = parse_args(args, parser)
-    all_args = modify_args(all_args.model_dir, all_args)
+    #all_args = modify_args(all_args.model_dir, all_args)
+    all_args = modify_args(all_args.model_dir, all_args, ["model_dir"]) #exclude nothing
 
     if all_args.algorithm_name == "rmappo" or all_args.algorithm_name == "rmappg":
         assert (
@@ -178,11 +181,6 @@ def main(args):
     assert all_args.n_rollout_threads == 1, "only support to use 1 env to render."
 
     device = torch.device("cpu")
-
-    # run dir
-    # run_dir = Path(os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
-    # if not run_dir.exists():
-    #     os.makedirs(str(run_dir))
 
     # seed
     torch.manual_seed(all_args.seed)
@@ -219,7 +217,7 @@ def main(args):
     runner = Runner(config)
     # actor_state_dict = torch.load(str(model_dir) + '/actor.pt')
     # runner.policy.actor.load_state_dict(actor_state_dict)
-    runner.render(True)
+    runner.render(False)
 
     # post process
     envs.close()

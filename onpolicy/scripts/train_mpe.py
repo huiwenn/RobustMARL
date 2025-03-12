@@ -147,6 +147,8 @@ def parse_args(args, parser):
 def main(args):
     parser = get_config()
     all_args, parser = parse_args(args, parser)
+    
+    # import config based on input env and policy
     if all_args.env_name == "GraphMPE":
         from onpolicy.config import graph_config
 
@@ -172,7 +174,7 @@ def main(args):
         "Please check the config.py."
     )
 
-    # cuda
+    # cuda checks
     if all_args.cuda and torch.cuda.is_available():
         print_box("Choose to use gpu...")
         device = torch.device("cuda:0")
@@ -198,6 +200,7 @@ def main(args):
     )
     if not run_dir.exists():
         os.makedirs(str(run_dir))
+    print("run_dir: ", run_dir)
 
     # wandb
     if all_args.use_wandb:

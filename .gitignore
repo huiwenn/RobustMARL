@@ -11,7 +11,7 @@ __pycache__/
 .DS_Store
 wandb*
 multiagent/orig_scenarios/
-trained_models/
+#trained_models/
 models/
 logs/
 out_*
