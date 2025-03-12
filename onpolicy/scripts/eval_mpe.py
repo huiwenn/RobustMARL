@@ -161,7 +161,7 @@ def main(args):
     parser = get_config()
     all_args = parse_args(args, parser)
     #all_args = modify_args(all_args.model_dir, all_args)
-    all_args = modify_args(all_args.model_dir, all_args, ["model_dir"]) #exclude nothing
+    all_args = modify_args(all_args.model_dir, all_args, ["model_dir", "save_gifs"]) #exclude nothing
 
     if all_args.algorithm_name == "rmappo" or all_args.algorithm_name == "rmappg":
         assert (
