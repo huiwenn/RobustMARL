@@ -149,7 +149,7 @@ def modify_args(
     args.cuda = False
     args.use_wandb = False
     args.use_render = True
-    args.save_gifs = True
+    #args.save_gifs = True
     args.n_rollout_threads = 1
 
     return args
@@ -219,11 +219,9 @@ def main(args):
     # runner.policy.actor.load_state_dict(actor_state_dict)
 
     # try to render, if fails, then use True
-    try:
+    if args.save_gifs:
         runner.render(False)
-    except Exception as e:
-        print(e)
-        print("Failed to render gif, getting metrics only instead")
+    else:
         runner.render(True)
 
     # post process
