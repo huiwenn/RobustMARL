@@ -474,7 +474,7 @@ class GMPERunner(Runner):
         print("success_rates: " + str(np.mean(success_rates_arr)))
         print("num_collisions: " + str(np.mean(num_collisions_arr)))
         # save the arrays to  file as dictionary 
-        with open("metrics.json", "w") as f:
+        with open(self.gif_dir + "/metrics.json", "w") as f:
             json.dump({
                 "rewards": rewards_arr,
                 "frac_episode": frac_episode_arr,
