@@ -221,7 +221,8 @@ def main(args):
     # try to render, if fails, then use True
     try:
         runner.render(False)
-    except:
+    except Exception as e:
+        print(e)
         print("Failed to render gif, getting metrics only instead")
         runner.render(True)
 
