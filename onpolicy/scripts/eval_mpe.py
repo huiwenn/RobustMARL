@@ -219,7 +219,7 @@ def main(args):
     # runner.policy.actor.load_state_dict(actor_state_dict)
 
     # try to render, if fails, then use True
-    if args.save_gifs:
+    if all_args.save_gifs:
         runner.render(False)
     else:
         runner.render(True)
