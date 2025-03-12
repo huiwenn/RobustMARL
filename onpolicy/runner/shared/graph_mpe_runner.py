@@ -6,6 +6,7 @@ import torch
 from onpolicy.runner.shared.base_runner import Runner
 import wandb
 import imageio
+import json
 
 
 def _t2n(x):
@@ -466,6 +467,20 @@ class GMPERunner(Runner):
         print(frac_episode_arr)
         print(success_rates_arr)
         print(num_collisions_arr)
+
+        # print average of the arrays
+        print("rewards: " + str(np.mean(rewards_arr)))
+        print("frac_episode: " + str(np.mean(frac_episode_arr)))
+        print("success_rates: " + str(np.mean(success_rates_arr)))
+        print("num_collisions: " + str(np.mean(num_collisions_arr)))
+        # save the arrays to  file as dictionary 
+        with open("metrics.json", "w") as f:
+            json.dump({
+                "rewards": rewards_arr,
+                "frac_episode": frac_episode_arr,
+                "success_rates": success_rates_arr,
+                "num_collisions": num_collisions_arr
+            }, f)
 
         if not get_metrics:
             if self.all_args.save_gifs:

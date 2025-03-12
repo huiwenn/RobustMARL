@@ -217,7 +217,13 @@ def main(args):
     runner = Runner(config)
     # actor_state_dict = torch.load(str(model_dir) + '/actor.pt')
     # runner.policy.actor.load_state_dict(actor_state_dict)
-    runner.render(False)
+
+    # try to render, if fails, then use True
+    try:
+        runner.render(False)
+    except:
+        print("Failed to render gif, getting metrics only instead")
+        runner.render(True)
 
     # post process
     envs.close()
