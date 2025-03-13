@@ -349,7 +349,6 @@ class PolyLine(Geom):
         self.close = close
         self.linewidth = LineWidth(1)
         self.add_attr(self.linewidth)
-        self.set_color(0, 0, 0, 0.5)  # Set alpha to 0.5 for transparency
 
     def render1(self):
         glBegin(GL_LINE_LOOP if self.close else GL_LINE_STRIP)

@@ -10,8 +10,8 @@
 #SBATCH -c 40 # cpus per task
 
 # Loading the required module
-source /etc/profile
-module load anaconda/2022a
+#source /etc/profile
+#module load anaconda/2022a
 
 logs_folder="out_informarl7"
 mkdir -p $logs_folder
@@ -20,7 +20,7 @@ mkdir -p $logs_folder
 n_agents=7
 # graph_feat_types=("global" "global" "relative" "relative")
 # cent_obs=("True" "False" "True" "False")
-seeds=(2 3 4 5)
+seeds=(3 4 5)
 
 # for seed in `seq ${seed_max}`;
 # do
