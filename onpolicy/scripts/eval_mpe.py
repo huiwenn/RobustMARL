@@ -7,7 +7,7 @@ from typing import Dict
 import numpy as np
 from pathlib import Path
 import torch
-
+import pyglet
 import os, sys
 
 np.int = np.int64
@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(os.getcwd()))
 
 from utils.utils import print_args, print_box
 from onpolicy.config import get_config
-from multiagent.MPE_env import MPEEnv, GraphMPEEnv
+from multiagent.MPE_env import MPEEnv, GraphMPEEnv, NoisyGraphMPEEnv
 from onpolicy.envs.env_wrappers import (
     SubprocVecEnv,
     DummyVecEnv,
@@ -32,6 +32,8 @@ def make_render_env(all_args: argparse.Namespace):
                 env = MPEEnv(all_args)
             elif all_args.env_name == "GraphMPE":
                 env = GraphMPEEnv(all_args)
+            elif all_args.env_name == "NoisyGraphMPE":
+                env = NoisyGraphMPEEnv(all_args)
             else:
                 print(f"Can not support the {all_args.env_name} environment.")
                 raise NotImplementedError
@@ -41,11 +43,11 @@ def make_render_env(all_args: argparse.Namespace):
         return init_env
 
     if all_args.n_rollout_threads == 1:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             return GraphDummyVecEnv([get_env_fn(0)])
         return DummyVecEnv([get_env_fn(0)])
     else:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             return GraphSubprocVecEnv(
                 [get_env_fn(i) for i in range(all_args.n_rollout_threads)]
             )
@@ -133,6 +135,7 @@ def modify_args(
         ydict = yaml.load(f, Loader=yaml.Loader)
 
     print("_" * 50)
+
     for k, v in ydict.items():
         if k in exclude_args:
             print(f"Using {k} = {vars(args)[k]}")
@@ -144,24 +147,27 @@ def modify_args(
                 # print(f'Setting attr {k} to {ydict[k]["value"]}')
                 setattr(args, k, ydict[k]["value"])
     print("_" * 50)
-
+     
     # set some args manually
     args.cuda = False
     args.use_wandb = False
     args.use_render = True
-    #args.save_gifs = True
     args.n_rollout_threads = 1
 
     return args
 
 
-def main(args):
+def eval_pipeline(args):
     #model_dir = 'trained_models/navigation/Navigation/rmappo/wandb/offline-run-20210720_220614-1eqhk4l1/files'
     #model_dir = 'onpolicy/results/GraphMPE/navigation_graph/rmappo/informarl/wandb/run-20250312_024502-j08n9m0q/files'
     parser = get_config()
     all_args = parse_args(args, parser)
     #all_args = modify_args(all_args.model_dir, all_args)
-    all_args = modify_args(all_args.model_dir, all_args, ["model_dir", "save_gifs"]) #exclude nothing
+    all_args = modify_args(all_args.model_dir, all_args, ["model_dir", "save_gifs", "env_name", "render_episodes", "obs_noise_level", "dyn_noise_level"]) 
+
+    if all_args.save_gifs == False:
+        pyglet.options["headless"] = True
+
 
     if all_args.algorithm_name == "rmappo" or all_args.algorithm_name == "rmappg":
         assert (
@@ -203,12 +209,12 @@ def main(args):
 
     # run experiments
     if all_args.share_policy:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             from onpolicy.runner.shared.graph_mpe_runner import GMPERunner as Runner
         else:
             from onpolicy.runner.shared.mpe_runner import MPERunner as Runner
     else:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             raise NotImplementedError
         from onpolicy.runner.separated.mpe_runner import MPERunner as Runner
 
@@ -218,14 +224,14 @@ def main(args):
     # actor_state_dict = torch.load(str(model_dir) + '/actor.pt')
     # runner.policy.actor.load_state_dict(actor_state_dict)
 
-    # try to render, if fails, then use True
-    if all_args.save_gifs:
-        runner.render(False)
-    else:
-        runner.render(True)
-
+    results = runner.render((not all_args.save_gifs))
     # post process
     envs.close()
+    return results
+
+def main(args):
+    eval_pipeline(args)
+   
 
 
 if __name__ == "__main__":

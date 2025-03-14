@@ -417,3 +417,5 @@ class MPERunner(Runner):
                 all_frames,
                 duration=self.all_args.ifi,
             )
+   
+        return (rewards_arr, success_rates_arr, num_collisions_arr, frac_episode_arr)

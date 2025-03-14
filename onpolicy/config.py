@@ -254,8 +254,20 @@ def get_config():
         "--env_name",
         type=str,
         default="MPE",
-        choices=["MPE", "GraphMPE"],
+        choices=["MPE", "GraphMPE", "NoisyGraphMPE"],
         help="specify the name of environment",
+    )
+    parser.add_argument(
+        "--obs_noise_level",
+        type=float,
+        default=0.0,
+        help="specify the noise level of observation",
+    )
+    parser.add_argument(
+        "--dyn_noise_level",
+        type=float,
+        default=0.0,
+        help="specify the noise level of dynamics",
     )
     parser.add_argument(
         "--use_obs_instead_of_state",

@@ -463,16 +463,20 @@ class GMPERunner(Runner):
             # print("Average episode rewards is: " +
             # str(np.mean(np.sum(np.array(episode_rewards), axis=0))))
 
+        mean_rewards = np.mean(rewards_arr)
+        mean_frac_episode = np.mean(frac_episode_arr)
+        mean_success_rates = np.mean(success_rates_arr)
+        mean_num_collisions = np.mean(num_collisions_arr)
         print(rewards_arr)
         print(frac_episode_arr)
         print(success_rates_arr)
         print(num_collisions_arr)
 
         # print average of the arrays
-        print("rewards: " + str(np.mean(rewards_arr)))
-        print("frac_episode: " + str(np.mean(frac_episode_arr)))
-        print("success_rates: " + str(np.mean(success_rates_arr)))
-        print("num_collisions: " + str(np.mean(num_collisions_arr)))
+        print("rewards: " + str(mean_rewards))
+        print("frac_episode: " + str(mean_frac_episode))
+        print("success_rates: " + str(mean_success_rates))
+        print("num_collisions: " + str(mean_num_collisions))
         # save the arrays to  file as dictionary 
         with open(self.gif_dir + "/metrics.json", "w") as f:
             json.dump({
@@ -489,3 +493,5 @@ class GMPERunner(Runner):
                     all_frames,
                     duration=self.all_args.ifi,
                 )
+        return (mean_rewards, mean_frac_episode, mean_success_rates, mean_num_collisions)
+

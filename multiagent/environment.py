@@ -929,6 +929,10 @@ class NoisyMultiAgentGraphEnv(MultiAgentBaseEnv):
         self.share_agent_id_observation_space = []
         num_agents = len(self.agents)
         for agent in self.agents:
+            # add noise to the agent dynamics
+            if self.dyn_noise_level > 0:
+                agent.u_noise = self.dyn_noise_level
+            
             node_obs, adj = self.graph_observation_callback(agent, self.world)
             node_obs_dim = node_obs.shape
             adj_dim = adj.shape
@@ -973,7 +977,7 @@ class NoisyMultiAgentGraphEnv(MultiAgentBaseEnv):
         if self.obs_noise_level > 0:
             # Get or generate consistent noise for this agent
             noise = self._get_agent_noise(agent, obs.shape)
-            return obs + noise
+            obs = np.clip(obs + noise, self.observation_space[agent.id].low, self.observation_space[agent.id].high)
         return obs
 
     def _get_graph_obs(self, agent: Agent):
@@ -984,10 +988,13 @@ class NoisyMultiAgentGraphEnv(MultiAgentBaseEnv):
         
         # Generate noise for node features with consistent noise
         noise_key = f"{agent.id}_node"
-        if noise_key not in self.noise_dict:
-            self.noise_dict[noise_key] = np.random.normal(0, self.obs_noise_level, node_obs.shape)
         
-            node_obs = node_obs + self.noise_dict[noise_key]
+        if self.obs_noise_level > 0:
+            if noise_key not in self.noise_dict:
+                self.noise_dict[noise_key] = np.random.normal(0, self.obs_noise_level, node_obs.shape)
+            
+            # clip noise by observation space
+            node_obs = np.clip(node_obs + self.noise_dict[noise_key], self.node_observation_space[agent.id].low, self.node_observation_space[agent.id].high)
         
         return node_obs, adj
 
@@ -1009,13 +1016,6 @@ class NoisyMultiAgentGraphEnv(MultiAgentBaseEnv):
         
         # advance world state
         self.world.step()
-        
-        # Add dynamics noise after world step if needed
-        if self.dyn_noise_level > 0:
-            for agent in self.agents:
-                # Add noise to velocity
-                vel_noise = np.random.normal(0, self.dyn_noise_level, self.world.dim_p)
-                agent.state.p_vel += vel_noise
         
         # record observation for each agent
         for agent in self.agents:

@@ -18,7 +18,7 @@ sys.path.append(os.path.abspath(os.getcwd()))
 
 from utils.utils import print_args, print_box, connected_to_internet
 from onpolicy.config import get_config
-from multiagent.MPE_env import MPEEnv, GraphMPEEnv
+from multiagent.MPE_env import MPEEnv, GraphMPEEnv, NoisyGraphMPEEnv
 from onpolicy.envs.env_wrappers import (
     SubprocVecEnv,
     DummyVecEnv,
@@ -36,6 +36,8 @@ def make_train_env(all_args: argparse.Namespace):
                 env = MPEEnv(all_args)
             elif all_args.env_name == "GraphMPE":
                 env = GraphMPEEnv(all_args)
+            elif all_args.env_name == "NoisyGraphMPE":
+                env = NoisyGraphMPEEnv(all_args)
             else:
                 print(f"Can not support the {all_args.env_name} environment")
                 raise NotImplementedError
@@ -45,11 +47,11 @@ def make_train_env(all_args: argparse.Namespace):
         return init_env
 
     if all_args.n_rollout_threads == 1:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             return GraphDummyVecEnv([get_env_fn(0)])
         return DummyVecEnv([get_env_fn(0)])
     else:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             return GraphSubprocVecEnv(
                 [get_env_fn(i) for i in range(all_args.n_rollout_threads)]
             )
@@ -63,6 +65,8 @@ def make_eval_env(all_args: argparse.Namespace):
                 env = MPEEnv(all_args)
             elif all_args.env_name == "GraphMPE":
                 env = GraphMPEEnv(all_args)
+            elif all_args.env_name == "NoisyGraphMPE":
+                env = NoisyGraphMPEEnv(all_args)
             else:
                 print(f"Can not support the {all_args.env_name} environment")
                 raise NotImplementedError
@@ -72,11 +76,11 @@ def make_eval_env(all_args: argparse.Namespace):
         return init_env
 
     if all_args.n_eval_rollout_threads == 1:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             return GraphDummyVecEnv([get_env_fn(0)])
         return DummyVecEnv([get_env_fn(0)])
     else:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             return GraphSubprocVecEnv(
                 [get_env_fn(i) for i in range(all_args.n_rollout_threads)]
             )
@@ -148,8 +152,12 @@ def main(args):
     parser = get_config()
     all_args, parser = parse_args(args, parser)
     
+    # Automatically set environment to NoisyGraphMPE if noise levels are > 0
+    if all_args.obs_noise_level > 0 or all_args.dyn_noise_level > 0:
+        all_args.env_name = "NoisyGraphMPE"
+
     # import config based on input env and policy
-    if all_args.env_name == "GraphMPE":
+    if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
         from onpolicy.config import graph_config
 
         all_args, parser = graph_config(args, parser)
@@ -284,12 +292,12 @@ def main(args):
 
     # run experiments
     if all_args.share_policy:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             from onpolicy.runner.shared.graph_mpe_runner import GMPERunner as Runner
         else:
             from onpolicy.runner.shared.mpe_runner import MPERunner as Runner
     else:
-        if all_args.env_name == "GraphMPE":
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
             raise NotImplementedError
         from onpolicy.runner.separated.mpe_runner import MPERunner as Runner
 
