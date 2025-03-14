@@ -831,7 +831,7 @@ class MultiAgentGraphEnv(MultiAgentBaseEnv):
 
     def _get_graph_obs(self, agent: Agent):
         if self.graph_observation_callback is None:
-            return None, None, None
+            return None, None
         return self.graph_observation_callback(agent, self.world)
 
     def _get_id(self, agent: Agent):
@@ -839,6 +839,230 @@ class MultiAgentGraphEnv(MultiAgentBaseEnv):
             return None
         return self.id_callback(agent)
 
+
+class NoisyMultiAgentGraphEnv(MultiAgentBaseEnv):
+    metadata = {"render.modes": ["human", "rgb_array"]}
+    """
+        Parameters:
+        –––––––––––
+        world: World
+            World for the environment. Refer `multiagent/core.py`
+        reset_callback: Callable
+            Reset function for the environment. Refer `reset()` in 
+            `multiagent/navigation_graph.py`
+        reward_callback: Callable
+            Reward function for the environment. Refer `reward()` in 
+            `multiagent/navigation_graph.py`
+        observation_callback: Callable
+            Observation function for the environment. Refer `observation()` 
+            in `multiagent/navigation_graph.py`
+        graph_observation_callback: Callable
+            Observation function for graph_related stuff in the environment. 
+            Refer `graph_observation()` in `multiagent/navigation_graph.py`
+        id_callback: Callable
+            A function to get the id of the agent in graph
+            Refer `get_id()` in `multiagent/navigation_graph.py`
+        info_callback: Callable
+            Reset function for the environment. Refer `info_callback()` in 
+            `multiagent/navigation_graph.py`
+        done_callback: Callable
+            Reset function for the environment. Refer `done()` in 
+            `multiagent/navigation_graph.py`
+        update_graph: Callable
+            A function to update the graph structure in the environment
+            Refer `update_graph()` in `multiagent/navigation_graph.py`
+        shared_viewer: bool
+            If we want a shared viewer for rendering the environment or 
+            individual windows for each agent as the ego
+        discrete_action: bool
+            If the action space is discrete or not
+        scenario_name: str
+            Name of the scenario to be loaded. Refer `multiagent/custom_scenarios.py`
+        obs_noise_level: float
+            standard deviation for gaussian noise added to the observation
+        dyn_noise_level: float
+            standard deviation for gaussian noise added to the dynamics
+    """
+
+    def __init__(
+        self,
+        world: World,
+        reset_callback: Callable = None,
+        reward_callback: Callable = None,
+        observation_callback: Callable = None,
+        graph_observation_callback: Callable = None,
+        id_callback: Callable = None,
+        info_callback: Callable = None,
+        done_callback: Callable = None,
+        update_graph: Callable = None,
+        shared_viewer: bool = True,
+        discrete_action: bool = True,
+        scenario_name: str = "navigation",
+        obs_noise_level: float = 0.0,
+        dyn_noise_level: float = 0.0,
+    ) -> None:
+        super(NoisyMultiAgentGraphEnv, self).__init__(
+            world,
+            reset_callback,
+            reward_callback,
+            observation_callback,
+            info_callback,
+            done_callback,
+            shared_viewer,
+            discrete_action,
+            scenario_name,
+        )
+        self.update_graph = update_graph
+        self.graph_observation_callback = graph_observation_callback
+        self.id_callback = id_callback
+        self.obs_noise_level = obs_noise_level
+        self.dyn_noise_level = dyn_noise_level
+        # Dictionary to store per-agent noise samples for consistent noise application
+        self.noise_dict = {}
+        self.set_graph_obs_space()
+
+    def set_graph_obs_space(self):
+        self.node_observation_space = []
+        self.adj_observation_space = []
+        self.edge_observation_space = []
+        self.agent_id_observation_space = []
+        self.share_agent_id_observation_space = []
+        num_agents = len(self.agents)
+        for agent in self.agents:
+            node_obs, adj = self.graph_observation_callback(agent, self.world)
+            node_obs_dim = node_obs.shape
+            adj_dim = adj.shape
+            edge_dim = 1  # NOTE hardcoding edge dimension
+            agent_id_dim = 1  # NOTE hardcoding agent id dimension
+            self.node_observation_space.append(
+                spaces.Box(
+                    low=-np.inf, high=+np.inf, shape=node_obs_dim, dtype=np.float32
+                )
+            )
+            self.adj_observation_space.append(
+                spaces.Box(low=-np.inf, high=+np.inf, shape=adj_dim, dtype=np.float32)
+            )
+            self.edge_observation_space.append(
+                spaces.Box(
+                    low=-np.inf, high=+np.inf, shape=(edge_dim,), dtype=np.float32
+                )
+            )
+            self.agent_id_observation_space.append(
+                spaces.Box(
+                    low=-np.inf, high=+np.inf, shape=(agent_id_dim,), dtype=np.float32
+                )
+            )
+            self.share_agent_id_observation_space.append(
+                spaces.Box(
+                    low=-np.inf,
+                    high=+np.inf,
+                    shape=(num_agents * agent_id_dim,),
+                    dtype=np.float32,
+                )
+            )
+    
+    def _get_agent_noise(self, agent: Agent, shape):
+        """Helper method to get or generate consistent noise for an agent"""
+        noise_key = f"{agent.id}_obs"
+        if noise_key not in self.noise_dict:
+            self.noise_dict[noise_key] = np.random.normal(0, self.obs_noise_level, shape)
+        return self.noise_dict[noise_key]
+
+    def _get_obs(self, agent: Agent) -> np.ndarray:
+        obs = super()._get_obs(agent)
+        if self.obs_noise_level > 0:
+            # Get or generate consistent noise for this agent
+            noise = self._get_agent_noise(agent, obs.shape)
+            return obs + noise
+        return obs
+
+    def _get_graph_obs(self, agent: Agent):
+        if self.graph_observation_callback is None:
+            return None, None
+        
+        node_obs, adj = self.graph_observation_callback(agent, self.world)
+        
+        # Generate noise for node features with consistent noise
+        noise_key = f"{agent.id}_node"
+        if noise_key not in self.noise_dict:
+            self.noise_dict[noise_key] = np.random.normal(0, self.obs_noise_level, node_obs.shape)
+        
+            node_obs = node_obs + self.noise_dict[noise_key]
+        
+        return node_obs, adj
+
+    def step(self, action_n: List) -> Tuple[List, List, List, List, List, List, List]:
+        if self.update_graph is not None:
+            self.update_graph(self.world)
+        self.current_step += 1        
+        # Clear the noise dictionary at the start of each step
+        self.noise_dict = {}
+        
+        obs_n, reward_n, done_n, info_n = [], [], [], []
+        node_obs_n, adj_n, agent_id_n = [], [], []
+        self.world.current_time_step += 1
+        self.agents = self.world.policy_agents
+
+        # set action for each agent
+        for i, agent in enumerate(self.agents):
+            self._set_action(action_n[i], agent, self.action_space[i])
+        
+        # advance world state
+        self.world.step()
+        
+        # Add dynamics noise after world step if needed
+        if self.dyn_noise_level > 0:
+            for agent in self.agents:
+                # Add noise to velocity
+                vel_noise = np.random.normal(0, self.dyn_noise_level, self.world.dim_p)
+                agent.state.p_vel += vel_noise
+        
+        # record observation for each agent
+        for agent in self.agents:
+            obs_n.append(self._get_obs(agent))
+            agent_id_n.append(self._get_id(agent))
+            node_obs, adj = self._get_graph_obs(agent)
+            node_obs_n.append(node_obs)
+            adj_n.append(adj)
+            reward = self._get_reward(agent)
+            reward_n.append(reward)
+            done_n.append(self._get_done(agent))
+            info = {"individual_reward": reward}
+            env_info = self._get_info(agent)
+            info.update(env_info)  # nothing fancy here, just appending dict to dict
+            info_n.append(info)
+
+        # all agents get total reward in cooperative case
+        reward = np.sum(reward_n)
+        if self.shared_reward:
+            reward_n = [[reward]] * self.n  # this line is similar to PPOEnv
+
+        return obs_n, agent_id_n, node_obs_n, adj_n, reward_n, done_n, info_n
+
+    def reset(self) -> Tuple[List, List, List, List]:
+        self.current_step = 0
+        # Reset the noise dictionary at the start of each episode
+        self.noise_dict = {}
+        # reset world
+        self.reset_callback(self.world)
+        # reset renderer
+        self._reset_render()
+        # record observations for each agent
+        obs_n, node_obs_n, adj_n, agent_id_n = [], [], [], []
+        self.agents = self.world.policy_agents
+        for agent in self.agents:
+            obs_n.append(self._get_obs(agent))
+            agent_id_n.append(self._get_id(agent))
+            node_obs, adj = self._get_graph_obs(agent)
+            node_obs_n.append(node_obs)
+            adj_n.append(adj)
+        return obs_n, agent_id_n, node_obs_n, adj_n
+
+    def _get_id(self, agent: Agent):
+        if self.id_callback is None:
+            return None
+        return self.id_callback(agent)
+    
 
 class MultiAgentGPGEnv(MultiAgentGraphEnv):
     metadata = {"render.modes": ["human", "rgb_array"]}
@@ -1270,7 +1494,7 @@ class MultiAgentDGN_ATOCEnv(MultiAgentGraphEnv):
         # since adj and reward is same for all agents, just return adj_n[0]
         # done only if all agents are done
 
-        return obs_n, adj_n[0], reward_n[0], done_n.all(), info_n
+        return obs_n, adj_n[0], reward_n, done_n.all(), info_n
 
     def reset(self) -> Tuple[List, List, List, List]:
         self.current_step = 0

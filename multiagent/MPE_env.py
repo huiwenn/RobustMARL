@@ -86,6 +86,36 @@ def GraphMPEEnv(args):
     return env
 
 
+def NoisyGraphMPEEnv(args):
+    """
+    Same as MPEEnv but for graph environment
+    """
+
+    # load scenario from script
+    assert "graph" in args.scenario_name, "Only use graph env for graph scenarios"
+    scenario = load(args.scenario_name + ".py").Scenario()
+    # create world
+    world = scenario.make_world(args=args)
+    from multiagent.environment import NoisyMultiAgentGraphEnv
+
+    # create multiagent environment
+    env = NoisyMultiAgentGraphEnv(
+        world=world,
+        reset_callback=scenario.reset_world,
+        reward_callback=scenario.reward,
+        observation_callback=scenario.observation,
+        graph_observation_callback=scenario.graph_observation,
+        update_graph=scenario.update_graph,
+        id_callback=scenario.get_id,
+        info_callback=scenario.info_callback,
+        scenario_name=args.scenario_name,
+        obs_noise_level=args.obs_noise_level,
+        dyn_noise_level=args.dyn_noise_level,
+    )
+
+    return env
+
+
 def GPGMPEEnv(args):
     """
     MPE env but compatible with the GPG baseline code

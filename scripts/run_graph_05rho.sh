@@ -14,7 +14,7 @@
 # Run the script
 # script to iterate through different hyperparameters
 #agents=(3 5 7 9 11 15)
-agents=(5 7)
+agents=(7)
 
 
 # execute the script with different params
