@@ -23,7 +23,7 @@ for i in ${agents[@]}; do
     --project_name "informarl_graph" \
     --experiment_name "MAPPO_noisyenv_${i}" \
     --scenario_name "navigation_graph" \
-    --num_agents=${i} --obs_noise_level 0.1 \
+    --num_agents=${i} --obs_noise_level 0 --dyn_noise_level 0.1 \
     --n_training_threads 1 --n_rollout_threads 128 \
     --num_mini_batch 1 --episode_length 25 --num_env_steps 15000000 \
     --ppo_epoch 10 --use_ReLU --gain 0.01 --lr 7e-4 --critic_lr 7e-4 \
