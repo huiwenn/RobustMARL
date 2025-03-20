@@ -26,5 +26,5 @@ for i in ${agents[@]}; do
     --n_training_threads 1 --n_rollout_threads 128 \
     --num_mini_batch 1 --episode_length 25 --num_env_steps 15000000 \
     --ppo_epoch 10 --use_ReLU --gain 0.01 --lr 7e-4 --critic_lr 7e-4 \
-    --user_name "shs066-uc-san-diego"
+    --user_name "shs066-uc-san-diego" 
 done

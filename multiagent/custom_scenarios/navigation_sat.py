@@ -261,8 +261,9 @@ class SatelliteScenario(BaseScenario):
         # its landmark, penalized for collisions
         rew = 0
         agents_goal = world.get_entity(entity_type='landmark', id=agent.id)
-        dist_to_goal = np.sqrt(np.sum(np.square(agent.state.p_pos - 
-                                                agents_goal.state.p_pos)))
+        dist_to_goal = np.sqrt(
+            np.sum(np.square(agent.state.p_pos - agents_goal.state.p_pos))
+        )
         if dist_to_goal < self.min_dist_thresh:
             rew += self.goal_rew
         else:

@@ -117,7 +117,7 @@ class Runner(object):
         self.trainer = TrainAlgo(self.all_args, self.policy, device=self.device)
 
         # buffer
-        if self.all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
+        if "Graph" in self.all_args.env_name:
             self.buffer = GraphReplayBuffer(
                 self.all_args,
                 self.num_agents,
