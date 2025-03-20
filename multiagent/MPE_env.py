@@ -271,3 +271,72 @@ def make_parallel_env(args: argparse.Namespace):
         return DummyVecEnv([get_env_fn(0)])
     else:
         return SubprocVecEnv([get_env_fn(i) for i in range(args.n_rollout_threads)])
+
+# satellite env
+
+def SatelliteMPEEnv(args:argparse.Namespace):
+    """
+        Creates a MultiAgentEnv object as env. This can be used similar to a gym
+        environment by calling env.reset() and env.step().
+        Use env.render() to view the environment on the screen.
+
+        Input:
+            args.scenario_name  :   name of the scenario from ./scenarios/ to be 
+                                Returns (without the .py extension)
+            benchmark       :   whether you want to produce benchmarking data
+                            (usually only done during evaluation)
+
+        Some useful env properties (see environment.py):
+            .observation_space  :   Returns the observation space for each agent
+            .action_space       :   Returns the action space for each agent
+            .n                  :   Returns the number of Agents
+    """
+
+   
+
+        # load scenario from script
+    scenario = load(args.scenario_name + "_sat.py").SatelliteScenario()
+    # create world
+    world = scenario.make_world(args=args)
+    from multiagent.environment import SatelliteMultiAgentOrigEnv as MultiAgentEnv
+    env = MultiAgentEnv(world=world, reset_callback=scenario.reset_world, 
+                        reward_callback=scenario.reward,
+                        observation_callback=scenario.observation,
+                        done_callback=scenario.done,
+                        info_callback=scenario.info_callback if 
+                        hasattr(scenario, 'info_callback') else None)
+
+
+    return env
+
+def SatelliteGraphMPEEnv(args):
+    '''
+    Same as MPEEnv but for graph environment
+    '''
+
+    # load scenario from script
+    assert 'graph' in args.scenario_name, ("Only use graph env for graph scenarios")
+    # scenario = load(args.scenario_name + ".py").Scenario() 
+    # create world
+    # world = scenario.make_world(args=args)
+
+    from multiagent.environment import SatelliteMultiAgentGraphEnv
+    scenario = load(args.scenario_name + "_sat.py").SatelliteScenario() 
+    # create world
+    world = scenario.make_world(args=args)
+
+    # print('args goal type is '  + str(args.goal_type))
+    env = SatelliteMultiAgentGraphEnv(world=world, reset_callback=scenario.reset_world, 
+                        reward_callback=scenario.reward, 
+                        observation_callback=scenario.observation, 
+                        graph_observation_callback=scenario.graph_observation,
+                        info_callback=scenario.info_callback, 
+                        done_callback=scenario.done,
+                        id_callback=scenario.get_id,
+                        update_graph=scenario.update_graph,
+                        goal_type = args.goal_type,
+                        save_loc = args.save_location,
+                        shared_viewer=False)
+  
+
+    return env

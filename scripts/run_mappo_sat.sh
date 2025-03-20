@@ -18,9 +18,9 @@ agents=(3 5 9 15)
 for i in ${agents[@]}; do
    # execute the script with different params
     python -m onpolicy.scripts.train_mpe --use_valuenorm \
-    --use_popart  --env_name "MPE" --algorithm_name "rmappo" \
+    --use_popart  --env_name "SatelliteMPE" --algorithm_name "rmappo" \
     --project_name "informarl_graph" \
-    --experiment_name "MAPPO_nograph_${i}" \
+    --experiment_name "MAPPO_sat_${i}" \
     --scenario_name "navigation" \
     --num_agents=${i} \
     --n_training_threads 1 --n_rollout_threads 128 \

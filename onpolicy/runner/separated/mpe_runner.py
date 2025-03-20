@@ -85,7 +85,7 @@ class MPERunner(Runner):
                 #     f"FPS: {int(total_num_steps / (end - start))}.\n")
 
                 env_infos = {}
-                if self.env_name == "MPE":
+                if self.env_name in ["MPE", "NoisyMPE"]:
                     avg_ep_rews = []
                     for agent_id in range(self.num_agents):
                         idv_rews = []
