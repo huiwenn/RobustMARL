@@ -315,13 +315,12 @@ def SatelliteGraphMPEEnv(args):
     '''
 
     # load scenario from script
-    assert 'graph' in args.scenario_name, ("Only use graph env for graph scenarios")
     # scenario = load(args.scenario_name + ".py").Scenario() 
     # create world
     # world = scenario.make_world(args=args)
 
     from multiagent.environment import SatelliteMultiAgentGraphEnv
-    scenario = load(args.scenario_name + "_sat.py").SatelliteScenario() 
+    scenario = load(args.scenario_name + "_sat_graph.py").SatelliteScenario() 
     # create world
     world = scenario.make_world(args=args)
 
@@ -334,8 +333,8 @@ def SatelliteGraphMPEEnv(args):
                         done_callback=scenario.done,
                         id_callback=scenario.get_id,
                         update_graph=scenario.update_graph,
-                        goal_type = args.goal_type,
-                        save_loc = args.save_location,
+                        #goal_type = args.goal_type,
+                        #save_loc = args.save_location,
                         shared_viewer=False)
   
 
