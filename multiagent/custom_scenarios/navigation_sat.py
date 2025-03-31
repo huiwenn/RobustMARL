@@ -336,7 +336,7 @@ class SatelliteScenario(BaseScenario):
 if __name__ == "__main__":
 
     from multiagent.environment import SatelliteMultiAgentOrigEnv
-    from multiagent.policy import InteractivePolicy
+    from multiagent.policy import InteractivePolicySat
 
     # makeshift argparser
     class Args:
@@ -368,7 +368,7 @@ if __name__ == "__main__":
     # render call to create viewer window
     env.render()
     # create interactive policies for each agent
-    policies = [InteractivePolicy(env,i) for i in range(env.n)]
+    policies = [InteractivePolicySat(env,i) for i in range(env.n)]
     # execution loop
     if args.share_env:
         obs_n, shared_obs = env.reset()
