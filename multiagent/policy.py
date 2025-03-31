@@ -77,7 +77,7 @@ class InteractivePolicy(Policy):
 # hard-coded to deal only with movement, not communication
 class InteractivePolicySat(Policy):
     def __init__(self, env, agent_index):
-        super(InteractivePolicy, self).__init__()
+        super(InteractivePolicySat, self).__init__()
         self.env = env
         # hard-coded keyboard events
         self.move = [False for i in range(4)]
