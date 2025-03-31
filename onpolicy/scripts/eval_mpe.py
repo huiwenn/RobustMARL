@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(os.getcwd()))
 
 from utils.utils import print_args, print_box
 from onpolicy.config import get_config
-from multiagent.MPE_env import MPEEnv, GraphMPEEnv, NoisyGraphMPEEnv
+from multiagent.MPE_env import MPEEnv, GraphMPEEnv, NoisyGraphMPEEnv, SatelliteMPEEnv, SatelliteGraphMPEEnv
 from onpolicy.envs.env_wrappers import (
     SubprocVecEnv,
     DummyVecEnv,
@@ -34,6 +34,10 @@ def make_render_env(all_args: argparse.Namespace):
                 env = GraphMPEEnv(all_args)
             elif all_args.env_name == "NoisyGraphMPE":
                 env = NoisyGraphMPEEnv(all_args)
+            elif all_args.env_name == "SatelliteMPE":
+                env = SatelliteMPEEnv(all_args)
+            elif all_args.env_name == "SatelliteGraphMPE":
+                env = SatelliteGraphMPEEnv(all_args)
             else:
                 print(f"Can not support the {all_args.env_name} environment.")
                 raise NotImplementedError
@@ -209,12 +213,12 @@ def eval_pipeline(args):
 
     # run experiments
     if all_args.share_policy:
-        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE", "SatelliteGraphMPE"]:
             from onpolicy.runner.shared.graph_mpe_runner import GMPERunner as Runner
         else:
             from onpolicy.runner.shared.mpe_runner import MPERunner as Runner
     else:
-        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE", "SatelliteGraphMPE"]:
             raise NotImplementedError
         from onpolicy.runner.separated.mpe_runner import MPERunner as Runner
 
