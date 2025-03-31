@@ -47,11 +47,11 @@ def make_render_env(all_args: argparse.Namespace):
         return init_env
 
     if all_args.n_rollout_threads == 1:
-        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE", "SatelliteGraphMPE"]:
             return GraphDummyVecEnv([get_env_fn(0)])
         return DummyVecEnv([get_env_fn(0)])
     else:
-        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE"]:
+        if all_args.env_name in ["GraphMPE", "NoisyGraphMPE", "SatelliteGraphMPE"]:
             return GraphSubprocVecEnv(
                 [get_env_fn(i) for i in range(all_args.n_rollout_threads)]
             )
